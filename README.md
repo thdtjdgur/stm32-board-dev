@@ -163,6 +163,47 @@ D:\maze\StmCubeMx\my_project\.vscode\c_cpp_properties.json
 
 템플릿 파일에는 기존 PC 기준 경로가 들어있으므로, 본인 PC 경로에 맞게 수정해야 한다.
 
+여기서 헷갈리기 쉬운 포인트는 "어떤 경로를 넣어야 하는지"다.
+
+먼저 본인 PC에서 아래 4개 경로를 찾는다.
+
+| 이름 | 의미 | 예시 |
+|---|---|---|
+| 프로젝트 루트 경로 | `CMakeLists.txt`가 있는 새 STM32 프로젝트 폴더 | `D:\maze\StmCubeMx\my_project` |
+| GCC bin 경로 | `arm-none-eabi-gcc.exe`, `arm-none-eabi-gdb.exe`가 들어있는 폴더 | `D:\maze\StmCubeMx\stm32tools\14.3.1+st.2\bin` |
+| OpenOCD 실행파일 경로 | `openocd.exe` 파일의 전체 경로 | `D:\maze\StmCubeMx\openocd\xpack-openocd-0.12.0-7\bin\openocd.exe` |
+| OpenOCD scripts 경로 | `interface\stlink.cfg`, `target\stm32g4x.cfg`를 찾을 수 있는 scripts 폴더 | `D:\maze\StmCubeMx\openocd\xpack-openocd-0.12.0-7\openocd\scripts` |
+
+경로를 찾기 어렵다면 PowerShell에서 아래처럼 확인한다.
+
+```powershell
+where.exe arm-none-eabi-gcc
+where.exe arm-none-eabi-gdb
+where.exe openocd
+```
+
+`where.exe`로 안 나오면 직접 설치한 폴더 안에서 찾는다.
+
+```powershell
+Get-ChildItem -Recurse "D:\maze\StmCubeMx\stm32tools" -Filter arm-none-eabi-gcc.exe
+Get-ChildItem -Recurse "D:\maze\StmCubeMx\stm32tools" -Filter arm-none-eabi-gdb.exe
+Get-ChildItem -Recurse "D:\maze\StmCubeMx\openocd" -Filter openocd.exe
+```
+
+JSON과 CMake 파일 안에서는 Windows `\` 대신 `/`를 쓰는 것을 추천한다.
+
+예를 들어:
+
+```text
+D:\maze\StmCubeMx\stm32tools\14.3.1+st.2\bin
+```
+
+이 경로는 설정 파일 안에서 아래처럼 쓴다.
+
+```text
+D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin
+```
+
 수정 대상은 아래 3개다.
 
 ```text
@@ -173,7 +214,9 @@ cmake\gcc-arm-none-eabi.cmake
 
 ### 6-1. CMakePresets.json 수정
 
-아래 항목에서 GCC 경로와 임시 폴더 경로를 수정한다.
+이 파일은 CMake가 빌드할 때 어떤 GCC를 쓸지, 임시 파일은 어디에 만들지 알려주는 파일이다.
+
+아래의 `GCC bin 경로` 부분을 본인 PC의 GCC bin 경로로 바꾼다.
 
 ```json
 "PATH": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin;$penv{PATH}",
@@ -181,12 +224,32 @@ cmake\gcc-arm-none-eabi.cmake
 "TMP": "D:/maze/StmCubeMx/tmp"
 ```
 
-그리고 아래 컴파일러 경로도 수정한다.
+예를 들어 본인 GCC가 아래에 있다면:
+
+```text
+D:\tools\stm32\gnu-tools-for-stm32\14.3.1+st.2\bin
+```
+
+`CMakePresets.json`에서는 이렇게 바꾼다.
+
+```json
+"PATH": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin;$penv{PATH}"
+```
+
+그리고 아래 컴파일러 경로도 같은 GCC bin 경로 기준으로 바꾼다.
 
 ```json
 "CMAKE_C_COMPILER": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin/arm-none-eabi-gcc.exe",
 "CMAKE_ASM_COMPILER": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin/arm-none-eabi-gcc.exe",
 "CMAKE_CXX_COMPILER": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin/arm-none-eabi-g++.exe"
+```
+
+위의 예시 경로를 쓰는 사람이라면 이렇게 바꾼다.
+
+```json
+"CMAKE_C_COMPILER": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc.exe",
+"CMAKE_ASM_COMPILER": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc.exe",
+"CMAKE_CXX_COMPILER": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-g++.exe"
 ```
 
 `TEMP`, `TMP`는 GCC가 임시 파일을 만드는 위치다.
@@ -197,17 +260,37 @@ cmake\gcc-arm-none-eabi.cmake
 D:\maze\StmCubeMx\tmp
 ```
 
+이 폴더가 없다면 직접 만든다.
+
+```powershell
+mkdir D:\maze\StmCubeMx\tmp
+```
+
 ### 6-2. cmake/gcc-arm-none-eabi.cmake 수정
 
-아래 줄을 본인 GCC 경로로 수정한다.
+이 파일도 CMake에게 실제 ARM용 GCC가 어디 있는지 알려주는 파일이다.
+
+아래 줄을 본인 GCC bin 경로로 수정한다.
 
 ```cmake
 set(TOOLCHAIN_PATH "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin")
 ```
 
-이 파일은 CMake에게 실제 ARM용 GCC가 어디 있는지 알려주는 파일이다.
+예를 들어 본인 GCC bin 경로가 아래라면:
+
+```text
+D:\tools\stm32\gnu-tools-for-stm32\14.3.1+st.2\bin
+```
+
+이렇게 쓴다.
+
+```cmake
+set(TOOLCHAIN_PATH "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin")
+```
 
 ### 6-3. .vscode/launch.json 수정
+
+이 파일은 디버그/업로드할 때 어떤 `.elf`를 올릴지, OpenOCD와 GDB가 어디 있는지 알려주는 파일이다.
 
 아래 항목을 수정한다.
 
@@ -220,7 +303,9 @@ set(TOOLCHAIN_PATH "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin")
 ]
 ```
 
-`executable`의 `.elf` 이름은 새 프로젝트 이름과 맞아야 한다.
+`executable`은 빌드 결과로 생기는 `.elf` 파일 경로다.
+
+`my_project` 부분은 CubeMX에서 정한 Project Name과 맞춰야 한다.
 
 예를 들어 프로젝트 이름이 `my_project`이면 아래처럼 쓴다.
 
@@ -228,16 +313,62 @@ set(TOOLCHAIN_PATH "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin")
 "executable": "${workspaceFolder}/build/Debug/my_project.elf"
 ```
 
-OpenOCD가 아래 구조라면:
-
-```text
-D:\maze\StmCubeMx\openocd\xpack-openocd-0.12.0-7
-```
-
-`launch.json`은 이런 식으로 맞춘다.
+프로젝트 이름이 `stm_test`이면 이렇게 바꾼다.
 
 ```json
+"executable": "${workspaceFolder}/build/Debug/stm_test.elf"
+```
+
+`serverpath`에는 `openocd.exe` 파일의 전체 경로를 넣는다.
+
+OpenOCD 실행파일이 아래에 있다면:
+
+```text
+D:\maze\StmCubeMx\openocd\xpack-openocd-0.12.0-7\bin\openocd.exe
+```
+
+`launch.json`에는 이렇게 쓴다.
+
+```json
+"serverpath": "D:/maze/StmCubeMx/openocd/xpack-openocd-0.12.0-7/bin/openocd.exe"
+```
+
+`gdbPath`에는 `arm-none-eabi-gdb.exe` 파일의 전체 경로를 넣는다.
+
+GDB가 아래에 있다면:
+
+```text
+D:\maze\StmCubeMx\stm32tools\14.3.1+st.2\bin\arm-none-eabi-gdb.exe
+```
+
+`launch.json`에는 이렇게 쓴다.
+
+```json
+"gdbPath": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin/arm-none-eabi-gdb.exe"
+```
+
+`searchDir`에는 `openocd.exe`가 있는 `bin` 폴더가 아니라, OpenOCD의 `scripts` 폴더를 넣는다.
+
+OpenOCD scripts 폴더가 아래에 있다면:
+
+```text
+D:\maze\StmCubeMx\openocd\xpack-openocd-0.12.0-7\openocd\scripts
+```
+
+`launch.json`에는 이렇게 쓴다.
+
+```json
+"searchDir": [
+    "D:/maze/StmCubeMx/openocd/xpack-openocd-0.12.0-7/openocd/scripts"
+]
+```
+
+정리하면 `launch.json`의 핵심은 아래 4개다.
+
+```json
+"executable": "${workspaceFolder}/build/Debug/my_project.elf",
 "serverpath": "D:/maze/StmCubeMx/openocd/xpack-openocd-0.12.0-7/bin/openocd.exe",
+"gdbPath": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin/arm-none-eabi-gdb.exe",
 "searchDir": [
     "D:/maze/StmCubeMx/openocd/xpack-openocd-0.12.0-7/openocd/scripts"
 ]
@@ -457,4 +588,3 @@ copy_to_project_root
 ```
 
 이 파일들은 새 프로젝트의 소스코드가 아니라, VSCode가 STM32 프로젝트를 빌드하고 디버그할 수 있게 해주는 설정 파일이다.
-
