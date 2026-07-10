@@ -218,6 +218,9 @@ cmake\gcc-arm-none-eabi.cmake
 
 아래의 `GCC bin 경로` 부분을 본인 PC의 GCC bin 경로로 바꾼다.
 
+그리고 `TEMP`, `TMP`도 같이 바꿔야 한다.  
+이 둘은 GCC가 빌드 중 임시 파일을 만드는 폴더다. 한글 사용자 이름 경로를 타면 `Cannot create temporary file` 같은 오류가 날 수 있으므로, 가능하면 영문 경로의 임시 폴더를 직접 만들어서 넣는다.
+
 ```json
 "PATH": "D:/maze/StmCubeMx/stm32tools/14.3.1+st.2/bin;$penv{PATH}",
 "TEMP": "D:/maze/StmCubeMx/tmp",
@@ -233,8 +236,19 @@ D:\tools\stm32\gnu-tools-for-stm32\14.3.1+st.2\bin
 `CMakePresets.json`에서는 이렇게 바꾼다.
 
 ```json
-"PATH": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin;$penv{PATH}"
+"PATH": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin;$penv{PATH}",
+"TEMP": "D:/maze/StmCubeMx/tmp",
+"TMP": "D:/maze/StmCubeMx/tmp"
 ```
+
+여기서 `D:/maze/StmCubeMx/tmp`는 예시다. 본인 PC에서 임시 폴더를 `D:\stm32_tmp`로 만들었다면 아래처럼 바꾼다.
+
+```json
+"TEMP": "D:/stm32_tmp",
+"TMP": "D:/stm32_tmp"
+```
+
+중요한 점은 `TEMP`와 `TMP` 둘 다 바꾸는 것이다. 하나만 바꾸면 어떤 도구는 여전히 기존 `C:\Users\사용자이름\AppData\Local\Temp` 쪽을 볼 수 있다.
 
 그리고 아래 컴파일러 경로도 같은 GCC bin 경로 기준으로 바꾼다.
 
@@ -252,18 +266,16 @@ D:\tools\stm32\gnu-tools-for-stm32\14.3.1+st.2\bin
 "CMAKE_CXX_COMPILER": "D:/tools/stm32/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-g++.exe"
 ```
 
-`TEMP`, `TMP`는 GCC가 임시 파일을 만드는 위치다.
-
-한글 사용자 이름 경로에서 오류가 나면 아래처럼 영문 경로의 임시 폴더를 만들어서 사용한다.
-
-```text
-D:\maze\StmCubeMx\tmp
-```
-
-이 폴더가 없다면 직접 만든다.
+임시 폴더가 없다면 직접 만든다.
 
 ```powershell
 mkdir D:\maze\StmCubeMx\tmp
+```
+
+빌드 로그에 아직도 아래처럼 `C:\Users\...\Temp`가 보이면, VSCode를 완전히 껐다가 다시 켠 뒤 `CMake: Delete Cache and Reconfigure`를 실행한다.
+
+```text
+Cannot create temporary file in C:\Users\...\Temp
 ```
 
 ### 6-2. cmake/gcc-arm-none-eabi.cmake 수정
@@ -570,21 +582,3 @@ ST-LINK 연결
 보드 전원
 SWDIO/SWCLK/GND 연결
 ```
-
----
-
-## 12. 템플릿 zip 안에 들어있는 파일
-
-```text
-copy_to_project_root
-├─ .clangd
-├─ CMakePresets.json
-├─ cmake
-│  └─ gcc-arm-none-eabi.cmake
-└─ .vscode
-   ├─ c_cpp_properties.json
-   ├─ launch.json
-   └─ settings.json
-```
-
-이 파일들은 새 프로젝트의 소스코드가 아니라, VSCode가 STM32 프로젝트를 빌드하고 디버그할 수 있게 해주는 설정 파일이다.
