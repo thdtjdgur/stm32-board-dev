@@ -1,5 +1,10 @@
 # STM32 VSCode 개발 템플릿
 
+![MCU](https://img.shields.io/badge/MCU-STM32G474VET6-14213D?style=for-the-badge&labelColor=4A4A4A)
+![BUILD](https://img.shields.io/badge/BUILD-CMAKE%20%2B%20NINJA-168C80?style=for-the-badge&labelColor=4A4A4A)
+![DEBUG](https://img.shields.io/badge/DEBUG-OPENOCD%20%2B%20ST--LINK-D66A00?style=for-the-badge&labelColor=4A4A4A)
+![IDE](https://img.shields.io/badge/IDE-VISUAL%20STUDIO%20CODE-1F5FD6?style=for-the-badge&labelColor=4A4A4A)
+
 STM32CubeMX에서 만든 CMake 프로젝트를 VSCode에서 바로 Configure, Build, Debug하기 위한 설정 템플릿이다.
 
 이 저장소의 핵심 파일은 아래 하나다.
